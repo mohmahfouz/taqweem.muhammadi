@@ -1,0 +1,1048 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التقويم المحمدي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Arabic', Arial, sans-serif;
+            background: linear-gradient(to bottom, #f5f6f5, #e0e7ff);
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        header {
+            margin-bottom: 30px;
+        }
+        #pageTitle {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c6e49;
+            margin: 0 0 20px;
+        }
+        #calendarDescription {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c6e49;
+            max-width: 800px;
+            margin: 0 auto 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #d4a373;
+            line-height: 1.6;
+        }
+        #calendarDescription a {
+            color: #2c6e49;
+            text-decoration: none;
+            margin-right: 5px;
+        }
+        #calendarDescription a:hover {
+            color: #d4a373;
+        }
+        #calendarDescription .facebook-icon {
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+        #author {
+            font-size: 16px;
+            color: #2c6e49;
+            max-width: 800px;
+            margin: 20px auto 0;
+        }
+        .calendar-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        #todaySection, #dateConversionSection {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #d4a373;
+            margin: 20px 0;
+        }
+        #todaySection h2, #dateConversionSection h2 {
+            font-size: 24px;
+            color: #2c6e49;
+            margin-bottom: 15px;
+        }
+        #customDate {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c6e49;
+            margin: 10px 0;
+        }
+        #conversionCustomDate {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c6e49;
+            margin: 10px 0;
+        }
+        #gregDate, #conversionGregDate {
+            font-size: 24px;
+            color: #555;
+            margin: 10px 0;
+        }
+        #gregPickerLabel {
+            font-size: 18px;
+            color: #2c6e49;
+            margin: 10px 0;
+        }
+        #slider {
+            width: 90%;
+            margin: 20px auto;
+            height: 8px;
+            background: #d4a373;
+            border-radius: 5px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        #slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #2c6e49;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        #slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        #occasion, #conversionOccasion {
+            font-size: 20px;
+            color: #333;
+            margin: 10px 0;
+        }
+        #mansionInfo, #conversionMansionInfo {
+            font-size: 20px;
+            color: #333;
+            margin: 10px 0;
+            line-height: 1.6;
+            padding: 10px;
+            border: 1px solid #d4a373;
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        .button-group {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+        .button {
+            font-size: 18px;
+            padding: 12px 24px;
+            cursor: pointer;
+            background: #2c6e49;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        .button:hover {
+            background: #d4a373;
+            transform: scale(1.05);
+        }
+        .date-picker, .muhammadan-picker {
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        select, input[type="date"] {
+            padding: 10px;
+            border: 1px solid #d4a373;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 16px;
+            font-family: 'Noto Sans Arabic', Arial, sans-serif;
+        }
+        .inline-button {
+            padding: 8px 16px;
+            font-size: 18px;
+        }
+        .inline-button.arrow {
+            font-size: 18px;
+            padding: 8px 16px;
+        }
+        @media (max-width: 600px) {
+            .calendar-container {
+                padding: 20px;
+                max-width: 90%;
+            }
+            #pageTitle {
+                font-size: 24px;
+            }
+            #customDate, #conversionCustomDate {
+                font-size: 26px;
+            }
+            #calendarDescription {
+                font-size: 16px;
+            }
+            #author {
+                font-size: 14px;
+            }
+            #occasion, #conversionOccasion, #mansionInfo, #conversionMansionInfo {
+                font-size: 18px;
+            }
+            #gregDate, #conversionGregDate {
+                font-size: 20px;
+            }
+            #gregPickerLabel {
+                font-size: 16px;
+            }
+            #todaySection h2, #dateConversionSection h2 {
+                font-size: 20px;
+            }
+            .button {
+                font-size: 16px;
+                padding: 10px 20px;
+            }
+            .inline-button {
+                font-size: 16px;
+                padding: 8px 16px;
+            }
+            .inline-button.arrow {
+                font-size: 16px;
+                padding: 8px 16px;
+            }
+            #slider {
+                width: 95%;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+            .date-picker, .muhammadan-picker {
+                flex-direction: column;
+            }
+            #conversionMansionInfo {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 id="pageTitle">التقويم المحمدي</h1>
+        <p id="calendarDescription">
+            التقويم المحمدى هو نتيجة بحث السيد الأستاذ فرقد الحسينى القزوينى دام فيضه: لا علاقة له بحركة القمر. بل هو: تقويم شمسى نجمى يعتمد على حركة الشمس فى منازلها لمعرفة مواقع الشهور فى الفصول أولا. ومعرفة عدد السنين. المصدر: طلبة السيد فرقد الحسينى القزوينى
+            <a href="https://www.facebook.com/profile.php?id=100050581535431" title="طلبة السيد فرقد الحسينى القزوينى">
+                <svg class="facebook-icon" viewBox="0 0 24 24" fill="#2c6e49">
+                    <path d="M12 2.04c-5.5 0-10 4.49-10 10 0 4.99 3.66 9.13 8.44 9.88v-6.98h-2.54v-2.9h2.54v-2.21c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.24.19 2.24.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.77l-.44 2.9h-2.33v6.98c4.78-.75 8.44-4.89 8.44-9.88 0-5.51-4.5-10-10-10z"/>
+                </svg>
+            </a>
+        </p>
+    </header>
+    <main class="calendar-container">
+        <section id="todaySection">
+            <h2>اليوم</h2>
+            <h1 id="customDate"></h1>
+            <p id="gregDate"></p>
+            <p id="occasion"></p>
+            <div id="mansionInfo"></div>
+        </section>
+        <section id="dateConversionSection">
+            <h2>المقابلة بين التقويم الشمسى الحالى و التقويم المحمدى</h2>
+            <div class="date-picker">
+                <input type="date" id="gregorianPicker" min="0620-01-01" max="2089-12-31">
+            </div>
+            <p id="gregPickerLabel">الموافق</p>
+            <div class="muhammadan-picker">
+                <button id="prevYear" class="button inline-button">العام السابق</button>
+                <button id="prevCustomMonth" class="button inline-button">الشهر السابق</button>
+                <button id="prevDay" class="button inline-button arrow">اليوم السابق</button>
+                <select id="customDay"></select>
+                <select id="customMonth"></select>
+                <select id="customYear"></select>
+                <button id="nextDay" class="button inline-button arrow">اليوم التالى</button>
+                <button id="nextCustomMonth" class="button inline-button">الشهر التالي</button>
+                <button id="nextYear" class="button inline-button">العام التالى</button>
+            </div>
+            <div class="button-group">
+                <button id="resetButton" class="button">إعادة ضبط تاريخ اليوم</button>
+            </div>
+            <input type="range" id="slider" min="0" max="364" value="0">
+            <h1 id="conversionCustomDate"></h1>
+            <p id="conversionGregDate"></p>
+            <p id="conversionOccasion"></p>
+            <div id="conversionMansionInfo"></div>
+        </section>
+        <p id="author">تصميم محمد محفوظ © 2025</p>
+    </main>
+
+    <script>
+        const months = [
+            "رمضان", "شوال", "جمادى الأولى", "جمادى الآخرة", "رجب",
+            "ربيع الأول", "ربيع الآخر", "ذي القعدة", "ذي الحجة",
+            "محرم", "صفر", "شعبان"
+        ];
+        const baseSpecialDays = [
+            "يوم التقويم الأول", "يوم التقويم الثاني", "يوم التقويم الثالث",
+            "يوم التقويم الرابع", "يوم التقويم الخامس"
+        ];
+        let specialDays = [...baseSpecialDays];
+
+        const monthNames = {
+            1: "كانون الثاني",
+            2: "شباط",
+            3: "آذار",
+            4: "نيسان",
+            5: "أيار",
+            6: "حزيران",
+            7: "تموز",
+            8: "آب",
+            9: "أيلول",
+            10: "تشرين الأول",
+            11: "تشرين الثاني",
+            12: "كانون الأول"
+        };
+
+        const occasions = [
+            {"month": "رمضان", "day": "1", "occasion": "ليلة القدر"},
+            {"month": "رمضان", "day": "10", "occasion": "وفاة السيدة خديجة عليها السلام"},
+            {"month": "رمضان", "day": "15", "occasion": "ميلاد الإمام الحسن بن ابي طالب عليه السلام"},
+            {"month": "رمضان", "day": "19", "occasion": "جرح أمير المؤمنين عليه السلام"},
+            {"month": "رمضان", "day": "21", "occasion": "إستشهاد الإمام علي بن ابي طالب عليه السلام"},
+            {"month": "شوال", "day": "1", "occasion": "عيد الفطر"},
+            {"month": "شوال", "day": "15", "occasion": "معركة احد واستشهاد الحمزة عليه السلام"},
+            {"month": "شوال", "day": "25", "occasion": "إستشهاد الإمام جعفر الصادق عليه السلام"},
+            {"month": "جمادى الأولى", "day": "5", "occasion": "ولادة السيدة زينب بنت علي بن ابي طالب عليه السلام سنة 5 هجري"},
+            {"month": "جمادى الأولى", "day": "13", "occasion": "استشهاد فاطمه الزهراء عليها السلام على رواية"},
+            {"month": "جمادى الآخرة", "day": "3", "occasion": "وفاة السيدة فاطمة الزهراء عليها السلام على رواية"},
+            {"month": "جمادى الآخرة", "day": "13", "occasion": "وفاة أم البنين عليها السلام"},
+            {"month": "جمادى الآخرة", "day": "20", "occasion": "ولادة فاطمة الزهراء عليها السلام"},
+            {"month": "رجب", "day": "1", "occasion": "ولادة الإمام علي بن محمد الباقر عليه السلام"},
+            {"month": "رجب", "day": "2", "occasion": "وفاة الإمام علي بن محمد الهادي عليه السلام"},
+            {"month": "رجب", "day": "3", "occasion": "ولادة الإمام علي بن محمد الهادي عليه السلام"},
+            {"month": "رجب", "day": "10", "occasion": "ولادة الإمام محمد بن علي الجواد عليه السلام"},
+            {"month": "رجب", "day": "13", "occasion": "ولادة الإمام علي بن ابي طالب عليه السلام"},
+            {"month": "رجب", "day": "15", "occasion": "وفاة السيدة زينب بنت علي عليهما السلام"},
+            {"month": "رجب", "day": "25", "occasion": "استشهاد الامام الكاظم عليه السلام"},
+            {"month": "رجب", "day": "26", "occasion": "وفاة ابي طالب عليه السلام"},
+            {"month": "رجب", "day": "27", "occasion": "بعثة النبي صلى الله عليه و آله و سلم"},
+            {"month": "ربيع الأول", "day": "8", "occasion": "شهادة الامام الحسن العسكري عليه السلام"},
+            {"month": "ربيع الأول", "day": "10", "occasion": "وفاة عبد المطلب عليه السلام"},
+            {"month": "ربيع الأول", "day": "12", "occasion": "ولادة النبي صلى الله عليه و آله على رواية"},
+            {"month": "ربيع الأول", "day": "17", "occasion": "ولادة النبي صلى الله عليه و آله وولادة الإمام جعفر الصادق عليه السلام"},
+            {"month": "ربيع الآخر", "day": "8", "occasion": "شهادة السيدة فاطمة الزهراء عليها السلام على رواية"},
+            {"month": "ربيع الآخر", "day": "10", "occasion": "ولادة الإمام الحسن العسكري عليه السلام"},
+            {"month": "ذي القعدة", "day": "11", "occasion": "ولادة الإمام علي بن موسى الرضا عليه السلام"},
+            {"month": "ذي القعدة", "day": "25", "occasion": "يوم دحو الأرض"},
+            {"month": "ذي القعدة", "day": "آخر الشهر", "occasion": "شهادة الامام محمد الجواد عليه السلام"},
+            {"month": "ذي الحجة", "day": "1", "occasion": "زواج امير المؤمنين عليه السلام من فاطمة الزهراء عليها السلام"},
+            {"month": "ذي الحجة", "day": "7", "occasion": "شهادة الامام الباقر عليه السلام"},
+            {"month": "ذي الحجة", "day": "9", "occasion": "شهادة مسلم بن عقيل عليه السلام"},
+            {"month": "ذي الحجة", "day": "10", "occasion": "عيد الأضحى"},
+            {"month": "ذي الحجة", "day": "18", "occasion": "عيد الغدير"},
+            {"month": "ذي الحجة", "day": "24", "occasion": "يوم المباهلة"},
+            {"month": "محرم", "day": "10", "occasion": "يوم إستشهاد الحسين عليه السلام"},
+            {"month": "محرم", "day": "25", "occasion": "إستشهاد الإمام علي بن الحسين عليه السلام"},
+            {"month": "صفر", "day": "3", "occasion": "والدة الإمام الباقر عليه السلام"},
+            {"month": "صفر", "day": "7", "occasion": "إستشهاد الإمام الحسن بن علي عليه السلام"},
+            {"month": "صفر", "day": "20", "occasion": "أربعين الإمام الحسين عليه السلام"},
+            {"month": "صفر", "day": "28", "occasion": "إستشهاد النبي صلى الله عليه و آله"},
+            {"month": "صفر", "day": "آخر الشهر", "occasion": "إستشهاد الإمام الرضا عليه السلام"},
+            {"month": "شعبان", "day": "3", "occasion": "ولادة الإمام الحسين عليه السلام"},
+            {"month": "شعبان", "day": "4", "occasion": "ولادة العباس عليه السلام"},
+            {"month": "شعبان", "day": "5", "occasion": "ولادة الإمام علي بن الحسين عليه السلام"},
+            {"month": "شعبان", "day": "15", "occasion": "ولادة الإمام المهدي عليه السلام"}
+        ];
+
+        const mansions = [
+            {
+                "التاريخ": "2025-01-02",
+                "الطالع بالغداة": "الشولة",
+                "الغارب بالغداة": "الهقعة",
+                "يقول ساجع العرب": "اذا طلعت الشولة اعجلت الشيخ البولة واشتدت على العائل العولة"
+            },
+            {
+                "التاريخ": "2025-01-15",
+                "الطالع بالغداة": "النعائم",
+                "الغارب بالغداة": "الهنعة",
+                "يقول ساجع العرب": "اذا طلعت النعائم توسفت التهائم وخلص البرد الى كل نائم وتلاقى الرعاء بالنمائم"
+            },
+            {
+                "التاريخ": "2025-01-28",
+                "الطالع بالغداة": "البلدة",
+                "الغارب بالغداة": "الذراع",
+                "يقول ساجع العرب": "اذا طلعت البلده حممت الجعده واكلت القشده وقيل للبرد اهده"
+            },
+            {
+                "التاريخ": "2025-02-10",
+                "الطالع بالغداة": "سعد الذابح",
+                "الغارب بالغداة": "النثرة",
+                "يقول ساجع العرب": "اذا طلع سعد الذابح حمى اهله النابح ونفع اهله الرائح وتصبح السارح وظهر فى الحى الانافح"
+            },
+            {
+                "التاريخ": "2025-02-23",
+                "الطالع بالغداة": "سعد بلع",
+                "الغارب بالغداة": "الطرفة",
+                "يقول ساجع العرب": "اذا طلع سعد بلع اقتحم الربع ولحق الهبع وصيد المرع وصار فى الارض لمع"
+            },
+            {
+                "التاريخ": "2025-03-08",
+                "الطالع بالغداة": "سعد السعود",
+                "الغارب بالغداة": "الجبهة",
+                "يقول ساجع العرب": "اذا طلع سعد السعود نظر العود ولانت الجلود وذاب كل محمود وكره الناس فى الشمس القعود"
+            },
+            {
+                "التاريخ": "2025-03-21",
+                "الطالع بالغداة": "سعد الأخبية",
+                "الغارب بالغداة": "الزبرة",
+                "يقول ساجع العرب": "اذا طلع سعد الاخبية دهنت الاسقيه ونزلت الاحوية وتجاورت الابنيه"
+            },
+            {
+                "التاريخ": "2025-04-03",
+                "الطالع بالغداة": "الفرغ الأول",
+                "الغارب بالغداة": "الصرفة",
+                "يقول ساجع العرب": "اذا طلع الدلو هيب الجزو وانسل العفو وطلب اللهو الخلو"
+            },
+            {
+                "التاريخ": "2025-04-16",
+                "الطالع بالغداة": "الفرغ المؤخر",
+                "الغارب بالغداة": "السماك",
+                "يقول ساجع العرب": "اذا طلع الدلو هيب الجزو وانسل العفو وطلب اللهو الخلو"
+            },
+            {
+                "التاريخ": "2025-04-29",
+                "الطالع بالغداة": "السمكة",
+                "الغارب بالغداة": "السماك",
+                "يقول ساجع العرب": "اذا طلعت السمكه نصبت الشبكه وامكنت الحركه وتعلقت بالثوب الحسكه وطاب الزمان للنسكه"
+            },
+            {
+                "التاريخ": "2025-05-12",
+                "الطالع بالغداة": "الشرطان",
+                "الغارب بالغداة": "الغفر",
+                "يقول ساجع العرب": "اذا طلع الشرطان استوى الزمان وحضرت الاوطان وتهادى الجيران"
+            },
+            {
+                "التاريخ": "2025-05-25",
+                "الطالع بالغداة": "البطين",
+                "الغارب بالغداة": "الزبانى",
+                "يقول ساجع العرب": "اذا طلع البطين اقتضى الدين وظهر الزين واقتفى بالعطار و الزين"
+            },
+            {
+                "التاريخ": "2025-06-07",
+                "الطالع بالغداة": "الثريا",
+                "الغارب بالغداة": "الإكليل",
+                "يقول ساجع العرب": "اذا طلع النجم فالحر فى حدم و العشب فى حطم والعانات فى كدم"
+            },
+            {
+                "التاريخ": "2025-06-20",
+                "الطالع بالغداة": "الدبران",
+                "الغارب بالغداة": "القلب",
+                "يقول ساجع العرب": "اذا طلعت الدبران توقدت الحزان وكرهت النيران واستعرت الذبان وبيست الغدران ورمت بانفسها حيث شاءت الصبيان"
+            },
+            {
+                "التاريخ": "2025-07-03",
+                "الطالع بالغداة": "الهقعة",
+                "الغارب بالغداة": "الشولة",
+                "يقول ساجع العرب": "اذا طلعت الهقعة تقوضت الناس للقلعة ورجعوا عن النجعه واردفتها الهنعة"
+            },
+            {
+                "التاريخ": "2025-07-16",
+                "الطالع بالغداة": "الهنعة",
+                "الغارب بالغداة": "النعائم",
+                "يقول ساجع العرب": "اذا طلعت الجوزاء توقدت المعزاء وكنست الضباء وعرقت العلباء وطاب الخباء"
+            },
+            {
+                "التاريخ": "2025-07-29",
+                "الطالع بالغداة": "الذراع",
+                "الغارب بالغداة": "البلدة",
+                "يقول ساجع العرب": "اذا طلعت الذراع حسرت الشمس القناع واشعلت فى الافق الشعاع وترقرق السراب بكل قاع"
+            },
+            {
+                "التاريخ": "2025-08-11",
+                "الطالع بالغداة": "النثرة",
+                "الغارب بالغداة": "سعد الذابح",
+                "يقول ساجع العرب": "اذا طلعت النثرة قنأة البسرة وجنى النخل بكره وأوت المواشى حجره ولم تترك ف ذات در قطره"
+            },
+            {
+                "التاريخ": "2025-08-24",
+                "الطالع بالغداة": "الطرف",
+                "الغارب بالغداة": "سعد بلع",
+                "يقول ساجع العرب": "اذا طلعت الطرفة بكرت الخرفة وكثرت الطرفة وهانت للضيف الكلفة"
+            },
+            {
+                "التاريخ": "2025-09-06",
+                "الطالع بالغداة": "الجبهة",
+                "الغارب بالغداة": "سعد السعود",
+                "يقول ساجع العرب": "اذا طلعت الجبهة تحانت الولهه وتنازت السفهة وقلت فى الارض الرفهة"
+            },
+            {
+                "التاريخ": "2025-09-20",
+                "الطالع بالغداة": "الزبرة",
+                "الغارب بالغداة": "سعد الأخبية",
+                "يقول ساجع العرب": "اذا طلعت الزبرة طاب الزمان جنى البسر فى كل مكان"
+            },
+            {
+                "التاريخ": "2025-10-03",
+                "الطالع بالغداة": "الصرفة",
+                "الغارب بالغداة": "الفرغ الأول",
+                "يقول ساجع العرب": "اذا طلعت الصرفة احتال كل ذي حرفة وجفر كل ذي نطفة وامتيز عن المياه زلفه"
+            },
+            {
+                "التاريخ": "2025-10-16",
+                "الطالع بالغداة": "العواء",
+                "الغارب بالغداة": "الفرغ المؤخر",
+                "يقول ساجع العرب": "إذا طلعت العواء ضرب الخباء وطاب الهواء وكره العراء وشنن السقاء"
+            },
+            {
+                "التاريخ": "2025-10-29",
+                "الطالع بالغداة": "السماك",
+                "الغارب بالغداة": "السمكة",
+                "يقول ساجع العرب": "لذا طلع السماك ذهب العكاك وقل على الماء اللكاك"
+            },
+            {
+                "التاريخ": "2025-11-11",
+                "الطالع بالغداة": "الغفر",
+                "الغارب بالغداة": "الشرطان",
+                "يقول ساجع العرب": "اذا طلع الغفر اقشعر السفر وتربل النضر وحسن فى العين الجمر"
+            },
+            {
+                "التاريخ": "2025-11-24",
+                "الطالع بالغداة": "الزبانى",
+                "الغارب بالغداة": "البطين",
+                "يقول ساجع العرب": "اذا طلعت الزبانى احدثت لكل ذي عيال شانا ولكل ذي ماشية هوانا"
+            },
+            {
+                "التاريخ": "2025-12-07",
+                "الطالع بالغداة": "الإكليل",
+                "الغارب بالغداة": "الثريا",
+                "يقول ساجع العرب": "اذا طلع الإكليل هاجت الفحول وتخوفت السيول"
+            },
+            {
+                "التاريخ": "2025-12-20",
+                "الطالع بالغداة": "القلب",
+                "الغارب بالغداة": "الدبران",
+                "يقول ساجع العرب": "اذا طلع القلب جاء الشتاء كالكلب وصار اهل البوادي فى كرب ولا يمكن الفحل الا ذات ثرب"
+            }
+        ];
+
+        let todayGregYear = 2024;
+        let todayIndex = 0;
+        let baseGregYear = 2024;
+        let baseIndex = 0;
+        const selectedTimezone = "Asia/Baghdad";
+
+        function isLeapYear(year) {
+            return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        }
+
+        function getTodayIndexAndYear() {
+            const today = new Date(new Date().toLocaleString('en-US', { timeZone: selectedTimezone }));
+            const todayYear = today.getFullYear();
+            const todayMonth = today.getMonth();
+            const todayDate = today.getDate();
+
+            let year = todayYear;
+            let calendarStart = new Date(year, 9, 16); // October 16 (month 9, day 16)
+            let calendarEnd = new Date(year + 1, 9, 15);
+
+            if (today < calendarStart) {
+                year--;
+                calendarStart = new Date(year, 9, 16);
+                calendarEnd = new Date(year + 1, 9, 15);
+            } else if (today > calendarEnd) {
+                year++;
+                calendarStart = new Date(year, 9, 16);
+                calendarEnd = new Date(year + 1, 9, 15);
+            }
+
+            const timeDiff = today - calendarStart;
+            const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+            return { index: daysDiff, year };
+        }
+
+        function getOccasion(index) {
+            const isEndYearLeap = isLeapYear(baseGregYear + 1);
+            let currentMonth, currentDay;
+            if (index >= 360) {
+                currentMonth = null;
+                currentDay = specialDays[index - 360];
+            } else {
+                const monthIndex = Math.floor(index / 30);
+                currentMonth = months[monthIndex];
+                currentDay = (index % 30) + 1;
+            }
+
+            for (const occ of occasions) {
+                if (currentMonth && occ.month === currentMonth && occ.day == currentDay) {
+                    return occ.occasion;
+                }
+                if (occ.day === "آخر الشهر" && (
+                    (index === 359 && occ.month === currentMonth) ||
+                    (index === (isEndYearLeap ? 365 : 364) && specialDays[index - 360] === currentDay)
+                )) {
+                    return occ.occasion;
+                }
+            }
+            return null;
+        }
+
+        function getMansionInfo(index, year) {
+            const isEndYearLeap = isLeapYear(year + 1);
+            if (isEndYearLeap && index === 365) {
+                return mansions[27];
+            }
+
+            const cycleIndex = index % 365;
+            const baseDate = new Date(2024, 9, 16);
+            const ranges = mansions.map((mansion, i) => {
+                const date = new Date(mansion["التاريخ"]);
+                const timeDiff = date - baseDate;
+                const startIndex = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                const isJabha = mansion["الطالع بالغداة"] === "الجبهة";
+                const endIndex = startIndex + (isJabha ? 13 : 12);
+                return { start: startIndex % 365, end: endIndex % 365, mansion };
+            });
+
+            for (const range of ranges) {
+                if (range.start <= range.end && cycleIndex >= range.start && cycleIndex <= range.end) {
+                    return range.mansion;
+                } else if (range.start > range.end && (cycleIndex >= range.start || cycleIndex <= range.end)) {
+                    return range.mansion;
+                }
+            }
+
+            return null;
+        }
+
+        function getCustomDate(index, year) {
+            const baseDate = new Date(year, 9, 16);
+            baseDate.setDate(baseDate.getDate() + index);
+
+            const dayOfWeek = baseDate.toLocaleDateString('ar-EG', { weekday: 'long', timeZone: selectedTimezone });
+            const gregYear = baseDate.getFullYear();
+            const isBeforeCutoff = baseDate.getMonth() < 9 || (baseDate.getMonth() === 9 && baseDate.getDate() < 16);
+            const customYear = 1404 + (gregYear - 2024 - (isBeforeCutoff ? 1 : 0));
+
+            let dayName;
+            if (index >= 360) {
+                dayName = specialDays[index - 360];
+            } else {
+                const monthIndex = Math.floor(index / 30);
+                const day = (index % 30) + 1;
+                dayName = `${day} ${months[monthIndex]}`;
+            }
+
+            return { text: `${dayOfWeek} ${dayName} لسنة ${customYear} من الهجرة (تقويم محمدى)`, year: customYear };
+        }
+
+        function getGregorianDate(index, year) {
+            const baseDate = new Date(year, 9, 16);
+            baseDate.setDate(baseDate.getDate() + index);
+            const day = baseDate.getDate();
+            const month = monthNames[baseDate.getMonth() + 1];
+            const gregYear = baseDate.getFullYear();
+            return { text: `الموافق ${day} ${month} ${gregYear}`, date: baseDate };
+        }
+
+        function populateCustomDatePicker() {
+            const customMonth = document.getElementById('customMonth');
+            const customDay = document.getElementById('customDay');
+            const customYear = document.getElementById('customYear');
+
+            customMonth.innerHTML = '<option value="">اختر الشهر</option>';
+            months.forEach((month, i) => {
+                customMonth.innerHTML += `<option value="${i}">${month}</option>`;
+            });
+            customMonth.innerHTML += `<option value="special">أيام التقويم</option>`;
+
+            for (let y = 0; y <= 1500; y++) {
+                customYear.innerHTML += `<option value="${y}">${y}</option>`;
+            }
+
+            function updateDays() {
+                const monthValue = customMonth.value;
+                customDay.innerHTML = '<option value="">اختر اليوم</option>';
+                if (monthValue === "") return;
+                if (monthValue === "special") {
+                    const isEndYearLeap = isLeapYear(baseGregYear + 1);
+                    const maxDays = isEndYearLeap ? 6 : 5;
+                    for (let i = 1; i <= maxDays; i++) {
+                        customDay.innerHTML += `<option value="${i}">${specialDays[i - 1]}</option>`;
+                    }
+                } else {
+                    for (let i = 1; i <= 30; i++) {
+                        customDay.innerHTML += `<option value="${i}">${i}</option>`;
+                    }
+                }
+            }
+
+            customMonth.addEventListener('change', updateDays);
+            updateDays();
+        }
+
+        function updateGregorianDatePicker(index) {
+            const gregorianPicker = document.getElementById('gregorianPicker');
+            const { date } = getGregorianDate(index, baseGregYear);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            gregorianPicker.value = `${year}-${month}-${day}`;
+        }
+
+        function updateCustomDatePicker(index) {
+            const customMonth = document.getElementById('customMonth');
+            const customDay = document.getElementById('customDay');
+            const customYear = document.getElementById('customYear');
+            const { year } = getCustomDate(index, baseGregYear);
+            const isEndYearLeap = isLeapYear(baseGregYear + 1);
+
+            if (index >= 360) {
+                customMonth.value = "special";
+                customDay.innerHTML = '<option value="">اختر اليوم</option>';
+                const maxDays = isEndYearLeap ? 6 : 5;
+                for (let i = 1; i <= maxDays; i++) {
+                    customDay.innerHTML += `<option value="${i}">${specialDays[i - 1]}</option>`;
+                }
+                customDay.value = index - 359;
+            } else {
+                const monthIndex = Math.floor(index / 30);
+                const day = (index % 30) + 1;
+                customMonth.value = monthIndex;
+                customDay.innerHTML = '<option value="">اختر اليوم</option>';
+                for (let i = 1; i <= 30; i++) {
+                    customDay.innerHTML += `<option value="${i}">${i}</option>`;
+                }
+                customDay.value = day;
+            }
+            customYear.value = year;
+        }
+
+        function update() {
+            // Update Today's Date Section
+            const isTodayLeap = isLeapYear(todayGregYear + 1);
+            specialDays = isTodayLeap ? [...baseSpecialDays, "يوم التقويم السادس"] : [...baseSpecialDays];
+            customDateElem.innerText = getCustomDate(todayIndex, todayGregYear).text;
+            gregDateElem.innerText = getGregorianDate(todayIndex, todayGregYear).text;
+            const todayOccasion = getOccasion(todayIndex);
+            occasionElem.innerText = todayOccasion ? `المناسبات: ${todayOccasion}` : 'المناسبات: لا يوجد';
+            const todayMansion = getMansionInfo(todayIndex, todayGregYear);
+            if (todayMansion) {
+                mansionInfoElem.innerHTML = `
+                    الطالع بالغداة: ${todayMansion["الطالع بالغداة"]}<br>
+                    الغارب بالغداة: ${todayMansion["الغارب بالغداة"]}<br>
+                    يقول ساجع العرب: ${todayMansion["يقول ساجع العرب"]}
+                `;
+            } else {
+                mansionInfoElem.innerHTML = '';
+            }
+
+            // Update Date Conversion Section
+            const isConversionLeap = isLeapYear(baseGregYear + 1);
+            slider.max = isConversionLeap ? 365 : 364;
+            specialDays = isConversionLeap ? [...baseSpecialDays, "يوم التقويم السادس"] : [...baseSpecialDays];
+            let idx = parseInt(slider.value);
+            if (idx > slider.max) {
+                slider.value = idx = slider.max;
+            }
+            baseIndex = idx;
+
+            conversionCustomDateElem.innerText = getCustomDate(baseIndex, baseGregYear).text;
+            conversionGregDateElem.innerText = getGregorianDate(baseIndex, baseGregYear).text.replace('الموافق ', '');
+            const conversionOccasion = getOccasion(baseIndex);
+            conversionOccasionElem.innerText = conversionOccasion ? `المناسبات: ${conversionOccasion}` : 'المناسبات: لا يوجد';
+            const conversionMansion = getMansionInfo(baseIndex, baseGregYear);
+            if (conversionMansion) {
+                conversionMansionInfoElem.innerHTML = `
+                    <button id="prevMansion" class="button inline-button">المنزلة السابقة</button>
+                    الطالع بالغداة: ${conversionMansion["الطالع بالغداة"]}
+                    <button id="nextMansion" class="button inline-button">المنزلة التالية</button>
+                    <br>
+                    الغارب بالغداة: ${conversionMansion["الغارب بالغداة"]}<br>
+                    يقول ساجع العرب: ${conversionMansion["يقول ساجع العرب"]}
+                `;
+                // Reattach event listeners for dynamically added buttons
+                document.getElementById('prevMansion').addEventListener('click', () => {
+                    const cycleIndex = baseIndex % 365;
+                    const isEndYearLeap = isLeapYear(baseGregYear + 1);
+                    const maxIndex = isEndYearLeap ? 365 : 364;
+                    const baseDate = new Date(2024, 9, 16);
+                    const ranges = mansions.map((mansion, i) => {
+                        const date = new Date(mansion["التاريخ"]);
+                        const timeDiff = date - baseDate;
+                        const startIndex = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                        const isJabha = mansion["الطالع بالغداة"] === "الجبهة";
+                        const endIndex = startIndex + (isJabha ? 13 : 12);
+                        return { start: startIndex % 365, end: endIndex % 365, mansion };
+                    });
+
+                    let currentRangeIndex = ranges.findIndex(range =>
+                        (range.start <= range.end && cycleIndex >= range.start && cycleIndex <= range.end) ||
+                        (range.start > range.end && (cycleIndex >= range.start || cycleIndex <= range.end))
+                    );
+
+                    let newIndex = ranges[(currentRangeIndex - 1 + ranges.length) % ranges.length].start;
+                    if (cycleIndex < ranges[currentRangeIndex].start && ranges[currentRangeIndex].start > ranges[currentRangeIndex].end) {
+                        baseIndex -= (cycleIndex - ranges[(currentRangeIndex - 1 + ranges.length) % ranges.length].end + 1);
+                    } else {
+                        baseIndex = Math.floor(baseIndex / 365) * 365 + newIndex;
+                    }
+                    if (baseIndex < 0) {
+                        baseGregYear--;
+                        baseIndex += maxIndex + 1;
+                    }
+                    slider.value = baseIndex;
+                    update();
+                });
+
+                document.getElementById('nextMansion').addEventListener('click', () => {
+                    const cycleIndex = baseIndex % 365;
+                    const isEndYearLeap = isLeapYear(baseGregYear + 1);
+                    const maxIndex = isEndYearLeap ? 365 : 364;
+                    const baseDate = new Date(2024, 9, 16);
+                    const ranges = mansions.map((mansion, i) => {
+                        const date = new Date(mansion["التاريخ"]);
+                        const timeDiff = date - baseDate;
+                        const startIndex = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                        const isJabha = mansion["الطالع بالغداة"] === "الجبهة";
+                        const endIndex = startIndex + (isJabha ? 13 : 12);
+                        return { start: startIndex % 365, end: endIndex % 365, mansion };
+                    });
+
+                    let currentRangeIndex = ranges.findIndex(range =>
+                        (range.start <= range.end && cycleIndex >= range.start && cycleIndex <= range.end) ||
+                        (range.start > range.end && (cycleIndex >= range.start || cycleIndex <= range.end))
+                    );
+
+                    let newIndex = ranges[(currentRangeIndex + 1) % ranges.length].start;
+                    if (cycleIndex > ranges[currentRangeIndex].end && ranges[currentRangeIndex].start > ranges[currentRangeIndex].end) {
+                        baseIndex += (ranges[(currentRangeIndex + 1) % ranges.length].start - cycleIndex);
+                    } else {
+                        baseIndex = Math.floor(baseIndex / 365) * 365 + newIndex;
+                    }
+                    if (baseIndex > maxIndex) {
+                        baseGregYear++;
+                        baseIndex -= maxIndex + 1;
+                    }
+                    slider.value = baseIndex;
+                    update();
+                });
+            } else {
+                conversionMansionInfoElem.innerHTML = '';
+            }
+
+            updateCustomDatePicker(baseIndex);
+            updateGregorianDatePicker(baseIndex);
+        }
+
+        const slider = document.getElementById('slider');
+        const customDateElem = document.getElementById('customDate');
+        const occasionElem = document.getElementById('occasion');
+        const mansionInfoElem = document.getElementById('mansionInfo');
+        const gregDateElem = document.getElementById('gregDate');
+        const conversionCustomDateElem = document.getElementById('conversionCustomDate');
+        const conversionGregDateElem = document.getElementById('conversionGregDate');
+        const conversionOccasionElem = document.getElementById('conversionOccasion');
+        const conversionMansionInfoElem = document.getElementById('conversionMansionInfo');
+        const resetButton = document.getElementById('resetButton');
+        const prevYear = document.getElementById('prevYear');
+        const nextYear = document.getElementById('nextYear');
+        const prevCustomMonth = document.getElementById('prevCustomMonth');
+        const nextCustomMonth = document.getElementById('nextCustomMonth');
+        const prevDay = document.getElementById('prevDay');
+        const nextDay = document.getElementById('nextDay');
+        const gregorianPicker = document.getElementById('gregorianPicker');
+        const customMonth = document.getElementById('customMonth');
+        const customDay = document.getElementById('customDay');
+        const customYear = document.getElementById('customYear');
+
+        populateCustomDatePicker();
+
+        gregorianPicker.addEventListener('change', () => {
+            const selectedDate = new Date(gregorianPicker.value);
+            let year = selectedDate.getFullYear();
+            const calendarStart = new Date(year, 9, 16);
+            if (selectedDate < calendarStart) {
+                year--;
+            }
+            baseGregYear = year;
+            const timeDiff = selectedDate - new Date(year, 9, 16);
+            baseIndex = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            slider.value = baseIndex;
+            update();
+        });
+
+        prevCustomMonth.addEventListener('click', () => {
+            const isEndYearLeap = isLeapYear(baseGregYear + 1);
+            const maxIndex = isEndYearLeap ? 365 : 364;
+            const currentMonth = baseIndex >= 360 ? 12 : Math.floor(baseIndex / 30);
+            
+            let newMonth = currentMonth - 1;
+            let newIndex;
+            if (newMonth < 0) {
+                baseGregYear--;
+                newIndex = 360;
+            } else {
+                newIndex = newMonth * 30;
+            }
+            baseIndex = newIndex;
+            slider.value = baseIndex;
+            update();
+        });
+
+        nextCustomMonth.addEventListener('click', () => {
+            const isEndYearLeap = isLeapYear(baseGregYear + 1);
+            const maxIndex = isEndYearLeap ? 365 : 364;
+            const currentMonth = baseIndex >= 360 ? 12 : Math.floor(baseIndex / 30);
+            
+            let newMonth = currentMonth + 1;
+            let newIndex;
+            if (newMonth === 12) {
+                newIndex = 360;
+            } else if (newMonth > 12) {
+                baseGregYear++;
+                newIndex = 0;
+            } else {
+                newIndex = newMonth * 30;
+            }
+            baseIndex = newIndex;
+            slider.value = baseIndex;
+            update();
+        });
+
+        prevDay.addEventListener('click', () => {
+            const isEndYearLeap = isLeapYear(baseGregYear + 1);
+            const maxIndex = isEndYearLeap ? 365 : 364;
+
+            baseIndex--;
+            if (baseIndex < 0) {
+                baseGregYear--;
+                baseIndex = isLeapYear(baseGregYear + 1) ? 365 : 364;
+            }
+            slider.value = baseIndex;
+            update();
+        });
+
+        nextDay.addEventListener('click', () => {
+            const isEndYearLeap = isLeapYear(baseGregYear + 1);
+            const maxIndex = isEndYearLeap ? 365 : 364;
+
+            baseIndex++;
+            if (baseIndex > maxIndex) {
+                baseGregYear++;
+                baseIndex = 0;
+            }
+            slider.value = baseIndex;
+            update();
+        });
+
+        prevYear.addEventListener('click', () => {
+            baseGregYear--;
+            baseIndex = 0;
+            slider.value = baseIndex;
+            update();
+        });
+
+        nextYear.addEventListener('click', () => {
+            baseGregYear++;
+            baseIndex = 0;
+            slider.value = baseIndex;
+            update();
+        });
+
+        slider.addEventListener('input', () => {
+            baseIndex = parseInt(slider.value);
+            update();
+        });
+
+        resetButton.addEventListener('click', () => {
+            baseIndex = todayIndex;
+            baseGregYear = todayGregYear;
+            slider.value = baseIndex;
+            update();
+        });
+
+        function handleCustomDatePicker() {
+            const monthValue = customMonth.value;
+            const dayValue = customDay.value;
+            const yearValue = parseInt(customYear.value);
+            if (monthValue === "" || dayValue === "" || isNaN(yearValue)) return;
+
+            let index;
+            if (monthValue === "special") {
+                index = 360 + (parseInt(dayValue) - 1);
+            } else {
+                index = parseInt(monthValue) * 30 + (parseInt(dayValue) - 1);
+            }
+
+            const gregYear = yearValue - 1404 + 2024;
+            const baseDate = new Date(gregYear, 9, 16);
+            baseDate.setDate(baseDate.getDate() + index);
+            const isBeforeCutoff = baseDate.getMonth() < 9 || (baseDate.getMonth() === 9 && baseDate.getDate() < 16);
+            baseGregYear = isBeforeCutoff ? gregYear + 1 : gregYear;
+            baseIndex = index;
+            slider.value = baseIndex;
+            update();
+        }
+
+        customMonth.addEventListener('change', handleCustomDatePicker);
+        customDay.addEventListener('change', handleCustomDatePicker);
+        customYear.addEventListener('change', handleCustomDatePicker);
+
+        const { index, year } = getTodayIndexAndYear();
+        todayIndex = index;
+        todayGregYear = year;
+        baseIndex = index;
+        baseGregYear = year;
+        slider.value = baseIndex;
+
+        update();
+    </script>
+</body>
+</html>
