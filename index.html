@@ -296,7 +296,7 @@
             <div id="mansionInfo"></div>
         </section>
         <section id="dateConversionSection">
-            <h2>المقامله بين التقويم المحمدي والتقويم الشمسي الحالي (الميلادي)</h2>
+            <h2>المقابلة بين التقويم المحمدي والتقويم الشمسي الحالي (الميلادي)</h2>
             <div class="date-picker">
                 <input type="date" id="gregorianPicker" min="0620-01-01" max="2089-12-31">
             </div>
@@ -1003,14 +1003,22 @@
 
         prevYear.addEventListener('click', () => {
             baseGregYear--;
-            baseIndex = 0;
+            const isEndYearLeap = isLeapYear(baseGregYear + 1);
+            const maxIndex = isEndYearLeap ? 365 : 364;
+            if (baseIndex > maxIndex) {
+                baseIndex = maxIndex;
+            }
             slider.value = baseIndex;
             update();
         });
 
         nextYear.addEventListener('click', () => {
             baseGregYear++;
-            baseIndex = 0;
+            const isEndYearLeap = isLeapYear(baseGregYear + 1);
+            const maxIndex = isEndYearLeap ? 365 : 364;
+            if (baseIndex > maxIndex) {
+                baseIndex = maxIndex;
+            }
             slider.value = baseIndex;
             update();
         });
