@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -54,12 +15,30 @@
         }
         header {
             margin-bottom: 30px;
+            text-align: center;
+        }
+        .header-content {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
         }
         #pageTitle {
             font-size: 28px;
             font-weight: 700;
             color: #2c6e49;
-            margin: 0 0 20px;
+            margin: 0;
+            display: inline;
+        }
+        .small-link {
+            font-size: 16px;
+            color: #2c6e49;
+            text-decoration: none;
+            line-height: 1.5;
+        }
+        .small-link:hover {
+            color: #d4a373;
+            text-decoration: underline;
         }
         #calendarDescription, #additionalLinks {
             font-size: 18px;
@@ -88,7 +67,7 @@
             margin-right: 5px;
         }
         #author {
-            font-size: 16px;
+            font-size: 18px;
             color: #2c6e49;
             max-width: 800px;
             margin: 20px auto 0;
@@ -186,7 +165,17 @@
             border-radius: 8px;
             transition: background 0.3s ease, transform 0.2s ease;
         }
-        .button:hover {
+        .small-button {
+            font-size: 16px;
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #2c6e49;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        .button:hover, .small-button:hover {
             background: #d4a373;
             transform: scale(1.05);
         }
@@ -221,6 +210,12 @@
             #pageTitle {
                 font-size: 24px;
             }
+            .header-content {
+                gap: 4px;
+            }
+            .small-link {
+                font-size: 14px;
+            }
             #customDate, #conversionCustomDate {
                 font-size: 26px;
             }
@@ -228,7 +223,7 @@
                 font-size: 16px;
             }
             #author {
-                font-size: 14px;
+                font-size: 16px;
             }
             #occasion, #conversionOccasion, #mansionInfo, #conversionMansionInfo {
                 font-size: 18px;
@@ -245,6 +240,10 @@
             .button {
                 font-size: 16px;
                 padding: 10px 20px;
+            }
+            .small-button {
+                font-size: 14px;
+                padding: 8px 16px;
             }
             .inline-button {
                 font-size: 16px;
@@ -271,26 +270,23 @@
 </head>
 <body>
     <header>
-        <h1 id="pageTitle">التقويم المحمدي</h1>
-        <p id="calendarDescription">
-            التقويم المحمدى هو نتيجة بحث السيد الأستاذ فرقد الحسينى القزوينى دام فيضه: لا علاقة له بحركة القمر. بل هو: تقويم شمسى نجمى يعتمد على حركة الشمس فى منازلها لمعرفة مواقع الشهور فى الفصول أولا. ومعرفة عدد السنين. المصدر: طلبة السيد فرقد الحسينى القزوينى
-            <a href="https://www.facebook.com/profile.php?id=100050581535431" title="طلبة السيد فرقد الحسينى القزوينى">
-                <svg class="facebook-icon" viewBox="0 0 24 24" fill="#2c6e49">
-                    <path d="M12 2.04c-5.5 0-10 4.49-10 10 0 4.99 3.66 9.13 8.44 9.88v-6.98h-2.54v-2.9h2.54v-2.21c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.24.19 2.24.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.77l-.44 2.9h-2.33v6.98c4.78-.75 8.44-4.89 8.44-9.88 0-5.51-4.5-10-10-10z"/>
-                </svg>
-            </a>
-        </p>
-        <p id="additionalLinks">
-            <a href="https://drive.google.com/file/d/1KonLhpZ8gsSPl1UlbjyxGm1kHHQaQmTQ/view?fbclid=IwY2xjawM3-HtleHRuA2FlbQIxMABicmlkETEyZWVrR0RZejFUYzN5T0FVAR4YHrEAXzr9WSySCkqQLw0HDZshjLcBYhl22b9EPQJtHh1tNdliO_PRcPQdEQ_aem_yCNWTOaAr28eYVfRsxK3dw">التقويم المحمدي السنوي في الرابط التالي</a><br>
-            <a href="https://books.google.com.eg/books/about/%D9%81%D9%8A%D8%B6_%D8%A7%D9%84%D8%B9%D9%84%D9%8A%D9%85_%D9%81%D9%8A_%D9%85%D8%B9%D8%B1%D9%81%D8%A9_%D8%A7%D9%84.html?id=OyO1EAAAQBAJ&redir_esc=y">رابط كتاب فيض العليم فى معرفة التقويم</a><br>
-            <a href="https://www.facebook.com/AlhillaNgo" title="مؤسسة الحلة للدراسات الإنسانية والعلمية والدينية/ بابل">
-                <svg class="facebook-icon" viewBox="0 0 24 24" fill="#2c6e49">
-                    <path d="M12 2.04c-5.5 0-10 4.49-10 10 0 4.99 3.66 9.13 8.44 9.88v-6.98h-2.54v-2.9h2.54v-2.21c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.24.19 2.24.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.77l-.44 2.9h-2.33v6.98c4.78-.75 8.44-4.89 8.44-9.88 0-5.51-4.5-10-10-10z"/>
-                </svg>
-                مؤسسة الحلة للدراسات الإنسانية والعلمية والدينية/ بـــــابـــــــل
-            </a>
-        </p>
+        <div class="header-content">
+            <h1 id="pageTitle">التقويم المحمدي (<a id="savePageLink" class="small-link" href="#">حفظ الصفحة</a>)</h1>
+        </div>
     </header>
+    <p id="calendarDescription">
+        التقويم المحمدى هو نتيجة بحث السيد الأستاذ فرقد الحسينى القزوينى دام فيضه: لا علاقة له بحركة القمر. بل هو: تقويم شمسى نجمى يعتمد على حركة الشمس فى منازلها لمعرفة مواقع الشهور فى الفصول أولا. ومعرفة عدد السنين. المصدر كتاب فيض العليم في معرفة التقويم للسيد الأستاذ فرقد الحسيني القزويني
+    </p>
+    <p id="additionalLinks">
+        <a href="https://drive.google.com/file/d/1KonLhpZ8gsSPl1UlbjyxGm1kHHQaQmTQ/view?fbclid=IwY2xjawM3-HtleHRuA2FlbQIxMABicmlkETEyZWVrR0RZejFUYzN5T0FVAR4YHrEAXzr9WSySCkqQLw0HDZshjLcBYhl22b9EPQJtHh1tNdliO_PRcPQdEQ_aem_yCNWTOaAr28eYVfRsxK3dw">التقويم المحمدي السنوي في الرابط التالي</a><br>
+        <a href="https://books.google.com.eg/books/about/%D9%81%D9%8A%D8%B6_%D8%A7%D9%84%D8%B9%D9%84%D9%8A%D9%85_%D9%81%D9%8A_%D9%85%D8%B9%D8%B1%D9%81%D8%A9_%D8%A7%D9%84.html?id=OyO1EAAAQBAJ&redir_esc=y">رابط كتاب فيض العليم فى معرفة التقويم</a><br>
+        <a href="https://www.facebook.com/AlhillaNgo" title="مؤسسة الحلة للدراسات الإنسانية والعلمية والدينية/ بابل">
+            <svg class="facebook-icon" viewBox="0 0 24 24" fill="#2c6e49">
+                <path d="M12 2.04c-5.5 0-10 4.49-10 10 0 4.99 3.66 9.13 8.44 9.88v-6.98h-2.54v-2.9h2.54v-2.21c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.24.19 2.24.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.77l-.44 2.9h-2.33v6.98c4.78-.75 8.44-4.89 8.44-9.88 0-5.51-4.5-10-10-10z"/>
+            </svg>
+            مؤسسة الحلة للدراسات الإنسانية والعلمية والدينية/ بـــــابـــــــل
+        </a>
+    </p>
     <main class="calendar-container">
         <section id="todaySection">
             <h2>اليوم</h2>
@@ -300,7 +296,7 @@
             <div id="mansionInfo"></div>
         </section>
         <section id="dateConversionSection">
-            <h2>المقابلة بين التقويم الشمسى الحالى و التقويم المحمدى</h2>
+            <h2>المقامله بين التقويم المحمدي والتقويم الشمسي الحالي (الميلادي)</h2>
             <div class="date-picker">
                 <input type="date" id="gregorianPicker" min="0620-01-01" max="2089-12-31">
             </div>
@@ -325,7 +321,7 @@
             <p id="conversionOccasion"></p>
             <div id="conversionMansionInfo"></div>
         </section>
-        <p id="author">تصميم محمد محفوظ © 2025</p>
+        <p id="author">اسم المصمم: محمد محفوظ © 2025</p>
     </main>
 
     <script>
@@ -770,6 +766,20 @@
             customYear.value = year;
         }
 
+        function savePageAsHtml(event) {
+            event.preventDefault();
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'التقويم_المحمدي.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         function update() {
             // Update Today's Date Section
             const isTodayLeap = isLeapYear(todayGregYear + 1);
@@ -897,6 +907,7 @@
         const conversionOccasionElem = document.getElementById('conversionOccasion');
         const conversionMansionInfoElem = document.getElementById('conversionMansionInfo');
         const resetButton = document.getElementById('resetButton');
+        const savePageLink = document.getElementById('savePageLink');
         const prevYear = document.getElementById('prevYear');
         const nextYear = document.getElementById('nextYear');
         const prevCustomMonth = document.getElementById('prevCustomMonth');
@@ -909,6 +920,8 @@
         const customYear = document.getElementById('customYear');
 
         populateCustomDatePicker();
+
+        savePageLink.addEventListener('click', savePageAsHtml);
 
         gregorianPicker.addEventListener('change', () => {
             const selectedDate = new Date(gregorianPicker.value);
